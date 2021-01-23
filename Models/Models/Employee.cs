@@ -1,13 +1,14 @@
-﻿using System;
+﻿using Models.Enums;
+using System;
 using System.Collections.Generic;
 using System.Text;
-using MovieStore.Models.Enums;
 
-namespace MovieStore.Models
+namespace Models.Models
 {
     public class Employee : Member
     {
-        public Employee(string first, string last, int age, string username, string password, int hours)
+        public Employee() { }
+        public Employee(string first, string last, int age, string username, string password, int hours,int id)
         {
             DateOfRegistration = DateTime.Now;
             FirstName = first;
@@ -18,6 +19,7 @@ namespace MovieStore.Models
             Role = Role.Employee;
             HoursPerMonth = hours;
             Salary = 300;
+            Id = id;
             SetBonus();
             SetSalary();
         }
@@ -30,14 +32,14 @@ namespace MovieStore.Models
             {
                 Bonus = 0.3;
             }
-            else if(HoursPerMonth <= 160)
+            else if (HoursPerMonth <= 160)
             {
                 Bonus = null;
             }
         }
         public void SetSalary()
         {
-            if(Bonus != null)
+            if (Bonus != null)
             {
                 double? newSalary = (double)Salary + ((double)Salary * Bonus);
                 Salary = (int)newSalary;

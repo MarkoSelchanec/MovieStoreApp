@@ -1,9 +1,9 @@
-﻿using MovieStore.Models.Enums;
+﻿using Models.Enums;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MovieStore.Models
+namespace Models.Models
 {
     public class User : Member
     {
@@ -12,7 +12,7 @@ namespace MovieStore.Models
             DateOfRegistration = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
             Role = Role.User;
         }
-        public User(string first, string last, int age, string username, string password, SubscriptionType subscriptionType)
+        public User(string first, string last, int age, string username, string password, SubscriptionType subscriptionType, int id)
         {
             DateOfRegistration = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
             FirstName = first;
@@ -22,9 +22,9 @@ namespace MovieStore.Models
             Password = password;
             Role = Role.User;
             SubscriptionType = subscriptionType;
+            Id = id;
         }
-        public int MemberNumber { get; set; }
         public SubscriptionType SubscriptionType { get; set; }
-        public List<Movie> Movies = new List<Movie>();
+        public List<string> Movies = new List<string>();
     }
 }

@@ -1,23 +1,43 @@
 ﻿using DataAccess;
-using MovieStore.Models;
-using MovieStore.Models.Enums;
+using Models.Enums;
+using Models.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace MovieStore.Services
+namespace Services2
 {
     public static class Service
     {
-        private static User _loggedUser = null;
-        private static Employee _loggedEmployee = null;
+        private static Task<User> _loggedUser = null;
+        private static Task<Employee> _loggedEmployee = null;
+        private static Repository _repository = new Repository();
+        public static List<Movie> CheckAvailableMovies()
+        {
+            var movies = _repository.GetMovies();
+            Console.WriteLine("Movies in stock: ");
+            foreach (Movie movie in movies.Result)
+            {
+                if(movie.IsRented)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"{movie.Id + 1}) {movie.Title} | Rented");
+                    Console.ForegroundColor = ConsoleColor.White;
+                } else
+                {
+                Console.WriteLine($"{movie.Id + 1}) {movie.Title}");
+                }
+            }
+            return movies.Result;
+        }
         public static User RegisterUser()
         {
             Console.Clear();
             Console.WriteLine("User registration");
             User user = new User();
-            
+
             Console.Write("First name:");
             string fName = Console.ReadLine();
             while (fName.Length <= 3 || fName.Length > 30 || fName.Any(char.IsDigit))
@@ -28,7 +48,7 @@ namespace MovieStore.Services
 
             Console.Write("Last name:");
             string lName = Console.ReadLine();
-            while(lName.Length <= 3 || lName.Length > 30 || lName.Any(char.IsDigit))
+            while (lName.Length <= 3 || lName.Length > 30 || lName.Any(char.IsDigit))
             {
                 Console.WriteLine("Invalid last name, please try again:");
                 lName = Console.ReadLine();
@@ -53,7 +73,7 @@ namespace MovieStore.Services
 
             Console.Write("UserName:");
             string userName = Console.ReadLine();
-            while(userName.Length < 3 || userName.Length > 30)
+            while (userName.Length < 3 || userName.Length > 30)
             {
                 Console.WriteLine("Invalid username, please try again:");
                 userName = Console.ReadLine();
@@ -66,7 +86,7 @@ namespace MovieStore.Services
 
             Console.Write("Password:");
             string password = Console.ReadLine();
-            while(password.Length < 3 || password.Length > 30)
+            while (password.Length < 3 || password.Length > 30)
             {
                 Console.WriteLine("Invalid password, please try again:");
                 password = Console.ReadLine();
@@ -76,11 +96,11 @@ namespace MovieStore.Services
             Console.WriteLine($"1) {nameof(SubscriptionType.Monthly)}");
             Console.WriteLine($"2) {nameof(SubscriptionType.Annually)}");
             int subscriptionType = int.Parse(Console.ReadLine());
-            if(subscriptionType == 1)
+            if (subscriptionType == 1)
             {
                 user.SubscriptionType = SubscriptionType.Monthly;
-            }            
-            if(subscriptionType == 2)
+            }
+            if (subscriptionType == 2)
             {
                 user.SubscriptionType = SubscriptionType.Annually;
             }
@@ -90,6 +110,7 @@ namespace MovieStore.Services
             user.Age = age;
             user.UserName = userName;
             user.Password = password;
+            user.Id = _repository.GetUsers().Result.Count;
             Console.WriteLine("Registration Successful!");
             Console.WriteLine($"Welcome {user.FirstName}");
             ClearConsole();
@@ -155,33 +176,34 @@ namespace MovieStore.Services
 
             Console.WriteLine("Hours per month:");
             int hours = int.Parse(Console.ReadLine());
-            while(hours < 40 || hours > 200)
+            while (hours < 40 || hours > 200)
             {
                 Console.WriteLine("Weekly hours can't be under 40 or over 200");
                 hours = int.Parse(Console.ReadLine());
             }
 
 
-            Employee employee = new Employee(fName, lName, age, userName, password,hours);
+            Employee employee = new Employee(fName, lName, age, userName, password, hours, 0);
             return employee;
         }
 
-        public static User UserLogIn(string username, string password)
+        public static Task<User> UserLogIn(string username, string password)
         {
-            User loggedUser = StaticDb.users.Find(x => x.UserName == username && x.Password == password);
-            if(loggedUser == null)
+            var loggedUser = _repository.GetUser(username, password);
+            if (loggedUser == null)
             {
                 Console.Clear();
                 Console.WriteLine("That username and password combination do not match any registered user.");
                 return null;
-            } else
+            }
+            else
             {
                 return loggedUser;
             }
         }
-        public static Employee EmployeeLogIn(string username, string password)
+        public static Task<Employee> EmployeeLogIn(string username, string password)
         {
-            Employee loggedEmployee = StaticDb.employees.Find(x => x.UserName == username && x.Password == password);
+            var loggedEmployee = _repository.GetEmployee(username, password);
             if (loggedEmployee == null)
             {
                 Console.Clear();
@@ -211,56 +233,63 @@ namespace MovieStore.Services
                 Console.Write("Password:");
                 string password = Console.ReadLine();
                 _loggedUser = UserLogIn(userName, password);
-                if (_loggedUser != null)
+                if (_loggedUser.Result != null)
                 {
-                    Console.Clear();
                     bool userConsole = false;
                     while (!userConsole)
                     {
-                        Console.WriteLine($"{_loggedUser.FirstName}, would you like to: ");
-                        Console.WriteLine("1) Check your subscription status");
-                        Console.WriteLine("2) Rent a movie");
-                        Console.WriteLine("3) Check your rented movies");
-                        Console.WriteLine("4) Return a movie");
-                        Console.WriteLine("X) Back to start");
-                        var userValidatedChoice = Console.ReadLine();
-                        if(userValidatedChoice.ToUpper() != "X")
-                        {
-                            var userValidatedChoiceInt = int.Parse(userValidatedChoice);
-                            if (userValidatedChoiceInt == 1)
-                            {
-                                _loggedUser.CheckSubscription();
-                            }
-                            if (userValidatedChoiceInt == 2)
-                            {
-                                Console.Clear();
-                                _loggedUser.RentMovie();
-                            }
-                            if (userValidatedChoiceInt == 3)
-                            {
-                                _loggedUser.CheckRentedMovies();
-                            }
-                            if (userValidatedChoiceInt == 4)
-                            {
-                                _loggedUser.ReturnMovie();
-                            }
-                        }
-                        else
+                        try
                         {
                             Console.Clear();
-                            userConsole = true;
-                            successfulLog = true;
+                            Console.WriteLine($"{_loggedUser.Result.FirstName}, would you like to: ");
+                            Console.WriteLine("1) Check your subscription status");
+                            Console.WriteLine("2) Rent a movie");
+                            Console.WriteLine("3) Check your rented movies");
+                            Console.WriteLine("4) Return a movie");
+                            Console.WriteLine("X) Back to start");
+                            var userValidatedChoice = Console.ReadLine();
+                            if (userValidatedChoice.ToUpper() != "X")
+                            {
+                                var userValidatedChoiceInt = int.Parse(userValidatedChoice);
+                                if (userValidatedChoiceInt == 1)
+                                {
+                                    _loggedUser.Result.CheckSubscription();
+                                }
+                                if (userValidatedChoiceInt == 2)
+                                {
+                                    Console.Clear();
+                                    _loggedUser.Result.RentMovie();
+                                }
+                                if (userValidatedChoiceInt == 3)
+                                {
+                                    _loggedUser.Result.CheckRentedMovies();
+                                }
+                                if (userValidatedChoiceInt == 4)
+                                {
+                                    _loggedUser.Result.ReturnMovie();
+                                }
+                            }
+                            if (userValidatedChoice.ToUpper() == "X")
+                            {
+                                Console.Clear();
+                                userConsole = true;
+                                successfulLog = true;
+                            }
+                        }
+                        catch
+                        {
+                            Console.WriteLine("Wrong input.");
                         }
                     }
                 }
-                if (_loggedUser == null)
+                if (_loggedUser.Result == null)
                 {
                     Console.WriteLine("Would you like to try again? Y/N");
                     char retryLogin = char.Parse(Console.ReadLine().ToUpper());
                     if (retryLogin == 'N')
                     {
                         Console.Clear();
-                        successfulLog = true; 
+                        successfulLog = true;
                     }
                 }
             }
@@ -284,20 +313,21 @@ namespace MovieStore.Services
                     bool employeeConsole = false;
                     while (!employeeConsole)
                     {
-                        Console.WriteLine($"{_loggedEmployee.FirstName}, would you like to: ");
+                        Console.WriteLine($"{_loggedEmployee.Result.FirstName}, would you like to: ");
                         Console.WriteLine("1) Check all registered members");
                         Console.WriteLine("2) Add a new Member");
                         Console.WriteLine("3) Remove a Member");
                         Console.WriteLine("4) Check all available movies");
                         Console.WriteLine("5) Add a new Movie");
+                        Console.WriteLine("6) Remove Movie");
                         Console.WriteLine("X) Back to start");
                         var employeeValidatedChoice = Console.ReadLine();
-                        if(employeeValidatedChoice.ToUpper() != "X")
+                        if (employeeValidatedChoice.ToUpper() != "X")
                         {
                             var employeeValidatedChoiceInt = int.Parse(employeeValidatedChoice);
                             if (employeeValidatedChoiceInt == 1)
                             {
-                                _loggedEmployee.CheckMembers();
+                                _loggedEmployee.Result.CheckMembers();
                                 ClearConsole();
                             }
                             if (employeeValidatedChoiceInt == 2)
@@ -341,7 +371,7 @@ namespace MovieStore.Services
                                     {
                                         Console.Clear();
                                         Console.WriteLine("Users: ");
-                                        StaticDb.users.ForEach(x => {  
+                                        StaticDb.users.ForEach(x => {
                                             Console.Write(counter + ") ");
                                             x.DisplayInfo();
                                             counter++;
@@ -361,7 +391,7 @@ namespace MovieStore.Services
                                         Console.Clear();
                                         Console.WriteLine("Employees: ");
                                         StaticDb.employees.ForEach(x => {
-                                            if(x != _loggedEmployee)
+                                            if (x != _loggedEmployee.Result)
                                             {
                                                 Console.Write(counter + ") ");
                                                 x.DisplayInfo();
@@ -386,12 +416,16 @@ namespace MovieStore.Services
                             }
                             if (employeeValidatedChoiceInt == 4)
                             {
-                                UserService.CheckAvailableMovies();
+                                CheckAvailableMovies();
                                 ClearConsole();
                             }
                             if (employeeValidatedChoiceInt == 5)
                             {
                                 EmployeeService.AddMovie();
+                            }                            
+                            if (employeeValidatedChoiceInt == 6)
+                            {
+                                EmployeeService.RemoveMovie();
                             }
                         }
                         else
@@ -425,50 +459,41 @@ namespace MovieStore.Services
                 bool userValidate = false;
                 while (!userValidate)
                 {
-                    try
+                    Console.WriteLine("Select an action: ");
+                    Console.WriteLine("1) Log in");
+                    Console.WriteLine("2) Register");
+                    Console.WriteLine("X) Exit");
+                    var userInp = Console.ReadLine();
+                    if (userInp.ToUpper() != "X")
                     {
-                        Console.WriteLine("Select an action: ");
-                        Console.WriteLine("1) Log in");
-                        Console.WriteLine("2) Register");
-                        Console.WriteLine("X) Exit");
-                        var userInp = Console.ReadLine();
-                        if (userInp.ToUpper() != "X")
+                        try
                         {
                             Console.WriteLine(userInp);
                             var userInpInt = int.Parse(userInp);
                             if (userInpInt == 1)
                             {
-                                Console.Clear();
-                                Console.WriteLine("1) User login");
-                                Console.WriteLine("2) Employee login");
-                                Console.WriteLine("X) Back to start");
-                                var memberValidate = Console.ReadLine();
                                 bool loggedIn = false;
-                                if (memberValidate.ToUpper() != "X")
-                                {
-                                    var memberValidateInt = int.Parse(memberValidate);
-                                    while (!loggedIn)
-                                    {
-                                        if (memberValidateInt == 1)
-                                        {
-                                            loggedIn = UserConsole();
-                                        }
-                                        if (memberValidateInt == 2)
-                                        {
-                                            loggedIn = EmployeeConsole();
-                                        }
-                                        else
-                                        {
-                                            loggedIn = true;
-                                        }
-                                    }
-                                }
-                                else
+                                while (!loggedIn)
                                 {
                                     Console.Clear();
-                                    loggedIn = true;
+                                    Console.WriteLine("1) User login");
+                                    Console.WriteLine("2) Employee login");
+                                    Console.WriteLine("X) Back to start");
+                                    var memberValidate = Console.ReadLine();
+                                    if (memberValidate.ToUpper() == "X")
+                                    {
+                                        Console.Clear();
+                                        loggedIn = true;
+                                    }
+                                    if(int.Parse(memberValidate) == 1)
+                                    {
+                                        loggedIn = UserConsole();
+                                    }
+                                    if(int.Parse(memberValidate) == 2)
+                                    {
+                                        loggedIn = EmployeeConsole();
+                                    }
                                 }
-
                             }
                             else if (userInpInt == 2)
                             {
@@ -477,19 +502,21 @@ namespace MovieStore.Services
                             }
                             else
                             {
+                                Console.Clear();
                                 Console.WriteLine("Invalid input, please try again:");
                             }
                         }
-                        if (userInp.ToUpper() == "X")
+                        catch
                         {
-                            userValidate = true;
-                            runningValidate = true;
+                            Console.Clear();
                         }
                     }
-                    catch
+                    if (userInp.ToUpper() == "X")
                     {
-                        ClearConsole();
+                        userValidate = true;
+                        runningValidate = true;
                     }
+                  
                 }
             }
         }

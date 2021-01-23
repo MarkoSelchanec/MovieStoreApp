@@ -1,26 +1,19 @@
 ﻿using DataAccess;
-using MovieStore.Models;
-using MovieStore.Models.Enums;
+using Models.Enums;
+using Models.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace MovieStore.Services
+namespace Services2
 {
     public static class UserService
     {
-        public static void CheckAvailableMovies()
-        {
-            Console.WriteLine("Movies in stock: ");
-            int i = 1;
-            foreach (Movie movie in StaticDb.Movies)
-            {
-                Console.WriteLine($"{i}) {movie.Title}");
-                i++;
-            }
-        }
+        private static Repository _repository = new Repository();
         public static void CheckSubscription(this User _loggedUser)
         {
+            //Done
             Console.WriteLine($"Your subscription type is: {_loggedUser.SubscriptionType}");
             if (_loggedUser.SubscriptionType == SubscriptionType.Annually)
             {
@@ -34,6 +27,7 @@ namespace MovieStore.Services
         }
         public static void CheckRentedMovies(this User _loggedUser)
         {
+            //Done
             if (_loggedUser.Movies.Count == 0)
             {
                 Console.WriteLine("You do not have any rented movies.");
@@ -41,31 +35,28 @@ namespace MovieStore.Services
             else
             {
                 Console.WriteLine("Your rented movies:");
-                _loggedUser.Movies.ForEach(m => Console.WriteLine(m.Title));
+                _loggedUser.Movies.ForEach(m => Console.WriteLine(m));
             }
             Service.ClearConsole();
         }
         public static void RentMovie(this User _loggedUser)
         {
-            Console.WriteLine("Movies on offer: ");
-            int counter = 1;
-            StaticDb.Movies.ForEach(m =>
-            {
-                Console.WriteLine($"{counter}) {m.Title}");
-                counter++;
-            });
+            //Done
+            var movies = Service.CheckAvailableMovies();
             Console.WriteLine("Press X to go back.");
             var movieChoice = Console.ReadLine();
             Movie rentedMovie = null;
             if (movieChoice.ToUpper() != "X")
             {
                 int movieChoiceInt = int.Parse(movieChoice);
-                _loggedUser.Movies.Add(StaticDb.Movies[movieChoiceInt - 1]);
-                rentedMovie = StaticDb.Movies[movieChoiceInt - 1];
-                StaticDb.Movies.Remove(StaticDb.Movies[movieChoiceInt - 1]);
+                rentedMovie = movies[movieChoiceInt - 1];
+                rentedMovie.IsRented = true;
+                _repository.UpdateMovie(rentedMovie);
+                _loggedUser.Movies.Add(rentedMovie.Title);
+                _repository.UpdateUser(_loggedUser);
                 Service.ClearConsole();
             }
-            if(movieChoice.ToUpper() == "X")
+            if (movieChoice.ToUpper() == "X")
             {
                 Console.Clear();
             }
@@ -76,6 +67,7 @@ namespace MovieStore.Services
         }
         public static void ReturnMovie(this User _loggedUser)
         {
+            //Done
             if (_loggedUser.Movies.Count == 0)
             {
                 Console.WriteLine("You do not have any rented movies.");
@@ -85,7 +77,7 @@ namespace MovieStore.Services
                 int counter = 1;
                 _loggedUser.Movies.ForEach(m =>
                 {
-                    Console.WriteLine($"{counter}) {m.Title}");
+                    Console.WriteLine($"{counter}) {m}");
                     counter++;
                 });
                 Console.WriteLine("Press X to go back.");
@@ -93,8 +85,11 @@ namespace MovieStore.Services
                 if (movieChoice.ToUpper() != "X")
                 {
                     int movieChoiceInt = int.Parse(movieChoice);
-                    StaticDb.Movies.Add(_loggedUser.Movies[movieChoiceInt - 1]);
+                    var movie = _repository.GetMovie(movieChoiceInt - 1).Result;
+                    movie.IsRented = false;
+                    _repository.UpdateMovie(movie);
                     _loggedUser.Movies.Remove(_loggedUser.Movies[movieChoiceInt - 1]);
+                    _repository.UpdateUser(_loggedUser);
                 }
             }
             Service.ClearConsole();

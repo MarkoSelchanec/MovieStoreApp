@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace MovieStore.Models.Enums
+namespace Models.Enums
 {
     public enum Genre
     {
@@ -10,6 +10,7 @@ namespace MovieStore.Models.Enums
         Horror,
         Drama,
         Fiction,
-        Documentary
+        Documentary,
+        Action
     }
 }

@@ -1,32 +1,38 @@
 ﻿using DataAccess;
-using MovieStore.Models;
-using MovieStore.Models.Enums;
+using Models.Enums;
+using Models.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MovieStore.Services
+namespace Services2
 {
     public static class EmployeeService
     {
+        private static Repository _repository = new Repository();
         public static void CheckMembers(this Employee employee)
         {
+            //DONE
+            List<User> users = _repository.GetUsers().Result;
             Console.WriteLine("Users: ");
-            StaticDb.users.ForEach(x => x.DisplayInfo());
+            users.ForEach(x => x.DisplayInfo());
             Console.WriteLine("--------------------------------------------------");
+            List<Employee> employees = _repository.GetEmployees().Result;
             Console.WriteLine("Employees: ");
-            StaticDb.employees.ForEach(x => x.DisplayInfo());
+            employees.ForEach(x => x.DisplayInfo());
             Console.WriteLine("--------------------------------------------------");
         }
 
         public static void AddUser(User user)
         {
-            StaticDb.users.Add(user);
+            //DONE
+            _repository.InsertUser(user);
             Console.WriteLine($"User {user.FirstName} added");
         }
         public static void RemoveUser(User user)
         {
-            StaticDb.users.Remove(user);
+            //Done
+            _repository.RemoveUser(user);
             Console.WriteLine($"User {user.FirstName} removed");
         }
         public static void AddEmployee(Employee employee)
@@ -102,17 +108,17 @@ namespace MovieStore.Services
             {
                 Console.WriteLine("Just input a correct year please...");
                 releaseYear = int.Parse(Console.ReadLine());
-            } 
+            }
             Console.Write("Month:");
-            int releaseMonth = int.Parse(Console.ReadLine());         
-            while(releaseMonth < 0 && releaseMonth > 12)
+            int releaseMonth = int.Parse(Console.ReadLine());
+            while (releaseMonth < 0 && releaseMonth > 12)
             {
                 Console.WriteLine("There are 12 months )");
                 releaseMonth = int.Parse(Console.ReadLine());
             }
             Console.Write("Day:");
             int releaseDay = int.Parse(Console.ReadLine());
-            while(releaseDay < 1 && releaseDay > 31)
+            while (releaseDay < 1 && releaseDay > 31)
             {
                 Console.WriteLine("There are up to 31 days in a month )");
                 releaseDay = int.Parse(Console.ReadLine());
@@ -121,6 +127,35 @@ namespace MovieStore.Services
 
             StaticDb.Movies.Add(newMovie);
         }
-
+        public static void RemoveMovie()
+        {
+            Console.Clear();
+            var movies = Service.CheckAvailableMovies();
+            Console.WriteLine("Press X to go back.");
+            var movieChoice = Console.ReadLine();
+            Movie rentedMovie = null;
+            if (movieChoice.ToUpper() != "X")
+            {
+                int movieChoiceInt = int.Parse(movieChoice);
+                var movieToRemove = movies[movieChoiceInt - 1];
+                if(!movieToRemove.IsRented)
+                {
+                _repository.RemoveMovie(movieToRemove);
+                } 
+                else
+                {
+                    Console.WriteLine($"{movieToRemove.Title} is rented and can't be removed until it is returned.");
+                }
+                Service.ClearConsole();
+            }
+            if (movieChoice.ToUpper() == "X")
+            {
+                Console.Clear();
+            }
+            if (rentedMovie != null)
+            {
+                Console.WriteLine($"You rented {rentedMovie.Title}");
+            }
+        }
     }
 }

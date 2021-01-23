@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace MovieStore.Models
+namespace Models.Enums
 {
     public enum Role
     {

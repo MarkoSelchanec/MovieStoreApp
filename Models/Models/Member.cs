@@ -1,11 +1,13 @@
-﻿using System;
+﻿using Models.Enums;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MovieStore.Models
+namespace Models.Models
 {
     public class Member
     {
+        public int Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public int Age { get; set; }
@@ -13,9 +15,9 @@ namespace MovieStore.Models
         public string Password { get; set; }
         public DateTime DateOfRegistration { get; set; }
         public Role Role { get; set; }
-        public void DisplayInfo()    
+        public void DisplayInfo()
         {
             Console.WriteLine($"{FirstName} {LastName} | Registered on: {DateOfRegistration.ToShortDateString()}");
-        }    
+        }
     }
 }
